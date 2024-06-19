@@ -1,0 +1,85 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def custom_date_parser(date_str):
+    return pd.to_datetime(date_str, format='%d-%b-%y')
+
+file_path = '/content/Indian Small Cardamom Price History (1).csv'
+data = pd.read_csv(file_path, parse_dates=['Date of Auction'], date_parser=custom_date_parser)
+
+data['Year'] = data['Date of Auction'].dt.year
+data['Month'] = data['Date of Auction'].dt.month
+
+monthly_avg_price = data.groupby(['Year', 'Month'])['Avg.Price (Rs./Kg)'].mean().reset_index()
+
+# Define the months for each graph
+months_first_graph = [1, 5, 9, 12]
+months_second_graph_annotate = [4, 7, 10]
+
+# Function to plot prices for specified months
+def plot_prices_for_months(monthly_avg_prices, months, title):
+    plt.figure(figsize=(16, 10))
+
+    # Plot each year's data for specified months with a different color
+    for year in monthly_avg_prices['Year'].unique():
+        yearly_data = monthly_avg_prices[(monthly_avg_prices['Year'] == year) &
+                                         (monthly_avg_prices['Month'].isin(months))]
+        plt.plot(yearly_data['Month'], yearly_data['Avg.Price (Rs./Kg)'], marker='o', linestyle='-', label=str(year))
+
+        # Annotate the specified months
+        for i, row in yearly_data.iterrows():
+            if row['Month'] == 5:
+                offset = -15 if year % 2 == 0 else 15  # Alternate positions
+                plt.annotate(f'{row["Avg.Price (Rs./Kg)"]:.2f}',
+                             (row['Month'], row['Avg.Price (Rs./Kg)']),
+                             textcoords="offset points", xytext=(0, offset), ha='center')
+            else:
+                plt.annotate(f'{row["Avg.Price (Rs./Kg)"]:.2f}',
+                             (row['Month'], row['Avg.Price (Rs./Kg)']),
+                             textcoords="offset points", xytext=(0, 10), ha='center')
+
+    # Customize the plot
+    plt.title(title)
+    plt.xlabel('Month')
+    plt.ylabel('Average Price (Rs./Kg)')
+    plt.xticks(range(1, 13))
+    plt.grid(True)
+    plt.legend(title='Year', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Show the plot
+    plt.show()
+
+# Function to plot all months but only annotate specified months
+def plot_prices_all_months_with_annotations(monthly_avg_prices, annotate_months, title):
+    plt.figure(figsize=(16, 10))
+
+    # Plot each year's data for all months with a different color
+    for year in monthly_avg_prices['Year'].unique():
+        yearly_data = monthly_avg_prices[monthly_avg_prices['Year'] == year]
+        plt.plot(yearly_data['Month'], yearly_data['Avg.Price (Rs./Kg)'], marker='o', linestyle='-', label=str(year))
+
+        # Annotate the specified months
+        for i, row in yearly_data.iterrows():
+            if row['Month'] in annotate_months:
+                plt.annotate(f'{row["Avg.Price (Rs./Kg)"]:.2f}',
+                             (row['Month'], row['Avg.Price (Rs./Kg)']),
+                             textcoords="offset points", xytext=(0, 10), ha='center')
+
+    # Customize the plot
+    plt.title(title)
+    plt.xlabel('Month')
+    plt.ylabel('Average Price (Rs./Kg)')
+    plt.xticks(range(1, 13))
+    plt.grid(True)
+    plt.legend(title='Year', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Show the plot
+    plt.show()
+
+# Plot prices for the specified months in the first graph
+plot_prices_for_months(monthly_avg_price, months_first_graph, 'Monthly Average Cardamom Prices for January, May, September, and December')
+
+# Plot prices for all months with annotations for specified months in the second graph
+plot_prices_all_months_with_annotations(monthly_avg_price, months_second_graph_annotate, 'Monthly Average Cardamom Prices (annotating April, July, and October)')
